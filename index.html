@@ -206,7 +206,9 @@
               event.preventDefault();
               this.draggedNote = JSON.parse(event.dataTransfer.getData('text/plain'));
               this.addNote(this.draggedNote, newArray);
-              noteAbspielen(this.draggedNote.note);
+              if(JSON.stringify(newArray) != JSON.stringify(this.combinedNoteCards)){
+                noteAbspielen(this.draggedNote.note);
+              }
             },
 
             dragOver(event, oldArray){
