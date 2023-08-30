@@ -127,7 +127,7 @@
                 },
                 {
                   melodyTitle: 'Old McDonald Had A Farm',
-                  selectedNotes: [1, 1, 1, 5, 6, 6, 5],
+                  selectedNotes: [8, 8, 8, 5, 6, 6, 5],
                   noteCards: [],
                   pressedNotes: []
                 }
@@ -206,6 +206,7 @@
               event.preventDefault();
               this.draggedNote = JSON.parse(event.dataTransfer.getData('text/plain'));
               this.addNote(this.draggedNote, newArray);
+              noteAbspielen(this.draggedNote.note);
             },
 
             dragOver(event, oldArray){
