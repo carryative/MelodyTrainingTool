@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Melody Training Tool</title>
+    <script src="https://unpkg.com/vue@next"></script>
+    <link rel="stylesheet" href="./style.css">
+    
+  </head>
+
+  <body>
+    <div id="app">
+      <div class="headerContainer"><h1> {{title}} </h1></div>
+      
+      <div class="melodyContainer" style="padding-top: 120px;">
+        <melody></melody>
+    </div>
+
+    </div>
+
+    <script>
+      var c1 = new Audio('MusicNotes/1_C_Do.mp3');
+      var d2 = new Audio('MusicNotes/2_D_Re.mp3');
+      var e3 = new Audio('MusicNotes/3_E_Mi.mp3');
+      var f4 = new Audio('MusicNotes/4_F_Fa.mp3');
+      var g5 = new Audio('MusicNotes/5_G_So.mp3');
+      var a6 = new Audio('MusicNotes/6_A_La.mp3');
+      var b7 = new Audio('MusicNotes/7_B_Ti.mp3');
+      var c8 = new Audio('MusicNotes/8_C_Do.mp3');
+
+
+
+      let app = Vue.createApp({
+          data: function() {
+            return {
+              title: "Melody Training Tool"
+            }
+          }
+        })
+        
+        app.component('melody',{
+          template:`
+          <div class="difficultyButtonContainer">
+          <button class="difficultyButton" @click="toggleDifficulty()"> 
+            <h4>Difficulty:</h4> 
+            <p v-show="this.noteOrderVisible" > Easy </p> 
+            <p v-show="!this.noteOrderVisible" > Hard </p> 
+            </button>
+            </div>
+
+          <div class= "websiteColumns" >
+
+            <div class ="column">
+              <div class = "melody" v-for="melody in melodies"> 
+                  <button style="width: 500px;" @click="playNoteCards(melody)"> 
+                    <h2> {{ melody.melodyTitle }} </h2> 
+                    <p v-if="this.noteOrderVisible"> {{ melody.selectedNotes }} </p>
+                  </button>
+
+                  <hr/>
+
+                  <div class="dropArea" 
+                  @dragend = "dragEnd($event)"
+                  @dragover = "dragOver($event, melody.pressedNotes)"
+                  @drop = "dropNote($event, melody.pressedNotes)">
+                    <div v-for="note in melody.pressedNotes">
+                      <note-card  
+                      :note="note.note"
+                      :melody = "note.melody"
+                      :melodyNotes = "note.melodyNotes"
+                      :ID = "note.ID"
+                      @dragstart="dragStart($event, note)">
+                      {{note}}
+                      {{melody}}
+                      {{melodyNotes}}
+                      </note-card>
+                    </div>
+                    
+                  </div>
+              </div>
+            </div>
+
+          <div class="column" 
+            @dragover = "dragOver($event, this.combinedNoteCards)"
+            @drop = "dropNote($event, this.combinedNoteCards)"
+            @dragend = "dragEnd($event)">
+
+            <div class = "noteContainer">
+              <component
+                v-for="(noteCard, index) in this.combinedNoteCards"
+                :key="index"
+                :is="noteCard.component"
+                :note="noteCard.note"
+                :melody="noteCard.melody"
+                :melodyNotes="noteCard.melodyNotes"
+                :ID = "noteCard.ID"
+                @dragstart="dragStart($event, noteCard)">
+              </component>
+
+            </div>
+          </div>
+
+          </div>
+          `,
+          data(){
+            return{
+              melodies:[
+                {
+                  melodyTitle: 'Happy Birthday To You',
+                  selectedNotes: [5, 5, 6, 5, 8, 7],
+                  noteCards: [],
+                  pressedNotes: []
+                },
+                {
+                  melodyTitle: 'Twinkle, Twinkle, Little Star',
+                  selectedNotes: [1, 1, 5, 5, 6, 6, 5],
+                  noteCards: [],
+                  pressedNotes: []
+                },
+                {
+                  melodyTitle: 'All My Little Ducklings',
+                  selectedNotes: [1, 2, 3, 4, 5, 5],
+                  noteCards: [],
+                  pressedNotes: []
+                },
+                {
+                  melodyTitle: 'Old McDonald Had A Farm',
+                  selectedNotes: [1, 1, 1, 5, 6, 6, 5],
+                  noteCards: [],
+                  pressedNotes: []
+                }
+              ],
+              combinedNoteCards: [],
+              noteOrderVisible: true,
+              draggedNote: null
+            }
+          },
+          watch: {
+            noteOrderVisible: 'arrayOfAllNotes'
+          },
+          methods:{
+            arrayOfAllNotes(){
+              this.combinedNoteCards = [];
+              for(let melody of this.melodies){
+                melody.noteCards = melody.selectedNotes.map((note, index) => {
+                return {
+                  note: note,
+                  melody: melody.melodyTitle,
+                  melodyNotes: this.noteOrderVisible ? melody.selectedNotes : " ",
+                  ID: index,
+                  component: 'note-card' };
+                });
+                melody.pressedNotes = [];
+                this.combinedNoteCards = this.combinedNoteCards.concat(melody.noteCards);
+                this.shuffleArray(this.combinedNoteCards);
+              }
+            },
+
+            toggleDifficulty(){
+              this.noteOrderVisible = !this.noteOrderVisible;
+              this.combinedNoteCards = [];
+            },
+
+            shuffleArray(array){
+              array = array.sort(()=> Math.random()-0.5);
+            },
+
+            addNote(noteCard, array){
+              array.push(noteCard);
+            },
+            
+            removeNote(noteCard, array){
+              const indexToRemove = array.findIndex(
+                  card =>
+                    card.note === noteCard.note &&
+                    card.melody === noteCard.melody &&
+                    card.ID === noteCard.ID
+                    );
+                if(indexToRemove!==-1){
+                  array = array.splice(indexToRemove, 1);
+                }
+            },
+
+            async playNoteCards(melody){
+              if(!(melody.pressedNotes.length === 0)){
+              for(let noteCard of melody.pressedNotes){
+                const note = noteCard.note;
+                noteAbspielen(note);
+                await wait(900);
+              }} else{
+                for(let noteCard of melody.noteCards){
+                  const note = noteCard.note;
+                  noteAbspielen(note);
+                  await wait(600);
+                }
+              }
+            },
+            dragStart(event, note){
+              this.draggedNote = note;
+              event.dataTransfer.setData('text/plain', JSON.stringify(this.draggedNote));
+            },
+
+            dropNote(event, newArray){
+              event.preventDefault();
+              this.draggedNote = JSON.parse(event.dataTransfer.getData('text/plain'));
+              this.addNote(this.draggedNote, newArray);
+            },
+
+            dragOver(event, oldArray){
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              this.removeNote(this.draggedNote, oldArray);
+            },
+
+            dragEnd(event){
+              if(event.dataTransfer.dropEffect === 'none'){
+                this.addNote(this.draggedNote, this.combinedNoteCards);
+                this.draggedNote = null;
+              }
+            }
+          },
+
+          mounted() {
+            this.arrayOfAllNotes();
+            this.shuffleArray(this.combinedNoteCards);
+          }
+        })
+        
+        app.component('note-card',{
+          props:['note', 'melody', 'melodyNotes', 'ID'],
+          template:`
+          <div>
+            <div>
+              <button 
+              class = "noteCard" 
+              draggable = "true" 
+              @click="playSound(this.note)"
+              >
+                <h3>{{ note }} </h3> 
+                <p>{{ melody }}</p>
+                <p>{{ melodyNotes }}</p>
+                <div> 
+                  
+                </div>
+              </button>
+            </div>
+          </div>
+          `,
+          methods:{
+            playSound(note) {
+              noteAbspielen(note);
+            }
+          }
+        })
+
+
+    function noteAbspielen(note){
+      if(note == 1){
+        c1.play();
+      }else if(note == 2){
+        d2.play();
+      }else if(note == 3){
+        e3.play();
+      }else if(note == 4){
+        f4.play();
+      }else if(note == 5){
+        g5.play();
+      }else if(note == 6){
+        a6.play();
+      }else if(note == 7){
+        b7.play();
+      }else if(note == 8){
+        c8.play();
+      }
+      }
+      function wait(millis){
+        return new Promise((resolve, reject)=>{
+          setTimeout(() => {
+            resolve();
+          }, millis);
+        })
+      }
+        app.mount('#app')
+
+    </script>
+  
+
+    </body>
+  
+</html>   
